@@ -1,0 +1,200 @@
+import time
+import os
+
+
+
+start_real = time.time()
+start_process = time.process_time()  # User + System time
+
+    
+class Node:
+    def __init__(self, data):
+        self.data = data
+        self.next = None
+
+class LinkedList:
+    def __init__(self):
+        self.head = None
+        self._size = 0
+
+    def append(self, elem):
+        if self.head:
+            pointer = self.head
+            while(pointer.next):
+                pointer = pointer.next
+            pointer.next = Node(elem)
+        else:
+            self.head = Node(elem)
+        self._size = self._size + 1
+
+    def __len__(self):
+        return self._size
+
+    def _getnode(self, index):
+        pointer = self.head
+        for i in range(index):
+            if pointer:
+                pointer = pointer.next
+            else:
+                raise IndexError("list index out of range")
+        return pointer
+
+    def __getitem__(self, index):
+        pointer = self._getnode(index)
+        if pointer:
+            return pointer.data
+        else:
+            raise IndexError("list index out of range")
+
+    def __setitem__(self, index, elem):
+        pointer = self._getnode(index)
+        if pointer:
+            pointer.data = elem
+        else:
+            raise IndexError("list index out of range")
+
+    def index(self, elem):
+        pointer = self.head
+        i = 0
+        while(pointer):
+            if pointer.data == elem:
+                return i
+            pointer = pointer.next
+            i = i+1
+        raise ValueError("{} is not in list".format(elem))
+
+    def insert(self, index, elem):
+        node = Node(elem)
+        if index == 0:
+            node.next = self.head
+            self.head = node
+        else:
+            pointer = self._getnode(index-1)
+            node.next = pointer.next
+            pointer.next = node
+        self._size = self._size + 1
+
+    def remove(self, elem):
+        if self.head == None:
+            raise ValueError("{} is not in list".format(elem))
+        elif self.head.data == elem:
+            self.head = self.head.next
+            self._size = self._size - 1
+            return True
+        else:
+            ancestor = self.head
+            pointer = self.head.next
+            while(pointer):
+                if pointer.data == elem:
+                    ancestor.next = pointer.next
+                    pointer.next = None
+                    self._size = self._size - 1
+                    return True
+                ancestor = pointer
+                pointer = pointer.next
+        raise ValueError("{} is not in list".format(elem))
+
+    def __repr__(self):
+        r = ""
+        pointer = self.head
+        while(pointer):
+            r = r + str(pointer.data) + " "
+            pointer = pointer.next
+        return r
+
+    def __str__(self):
+        return self.__repr__()
+
+def processar_arquivo(nome_arquivo):
+    lista = LinkedList()
+    try:
+        with open(nome_arquivo, 'r', encoding='utf-8') as arquivo:
+            linhas = arquivo.readlines()
+            linhas = [linha.strip() for linha in linhas if linha.strip()]
+            
+            if len(linhas) < 2:
+                raise ValueError("Arquivo deve ter pelo menos 2 linhas")
+            
+            #Elementos iniciais
+            elementos_iniciais = linhas[0].split()
+            for elem in elementos_iniciais:
+                lista.append(int(elem))
+            
+            print(f"Lista inicial: {lista}")
+            
+            # Linha 2: Quantidade de ações
+            qtd_acoes = int(linhas[1])
+            
+            # Processa ações
+            for i in range(2, 2 + qtd_acoes):
+                if i >= len(linhas):
+                    break
+                
+                partes = linhas[i].split()
+                if len(partes) < 1:
+                    continue
+                
+                acao = partes[0].upper()
+                
+                if acao == 'P':
+                    print(f"Lista após ação {i-1}: {lista}")
+                
+                elif acao == 'A' and len(partes) >= 3:
+                    try:
+                        valor = int(partes[1])
+                        posicao = int(partes[2])
+                        lista.insert(posicao, valor)
+                        print(f"Adicionado {valor} na posição {posicao}")
+                    except (ValueError, IndexError) as e:
+                        print(f"Erro na ação {i-1}: {e}")
+                
+                elif acao == 'R' and len(partes) >= 2:
+                    try:
+                        valor = int(partes[1])
+                        lista.remove(valor)
+                        print(f"Removido valor {valor}")
+                    except ValueError as e:
+                        print(f"Erro na ação {i-1}: {e}")
+            
+            print(f"\nLista final: {lista}")
+            
+    except FileNotFoundError:
+        print(f"Erro: Arquivo '{nome_arquivo}' não encontrado!")
+    except Exception as e:
+        print(f"Erro ao processar arquivo: {e}")
+
+
+if __name__ == "__main__":
+    import sys
+    import os
+    
+    if len(sys.argv) == 2:
+        nome_arquivo = sys.argv[1]
+    else:
+        nome_arquivo = input("Digite o nome do arquivo: ")
+    
+    if os.path.exists(nome_arquivo):
+        processar_arquivo(nome_arquivo)
+    else:
+        print(f"Arquivo '{nome_arquivo}' não encontrado!")
+
+    
+    # Tempos finais
+    end_real = time.time()
+    end_process = time.process_time()
+    
+    # Cálculos
+    real_time = end_real - start_real
+    total_cpu_time = end_process - start_process  # User + System
+    
+    # Estimativa: assumindo que I/O é principalmente System Time
+    # Esta é uma aproximação!
+    user_time_estimate = total_cpu_time * 0.8  # Ajuste conforme necessário
+    system_time_estimate = total_cpu_time * 0.2
+    
+
+print(f"=== TEMPOS (ESTIMATIVA) ===")
+print(f"Real Time:          {real_time:.6f} s")
+print(f"Total CPU Time:     {total_cpu_time:.6f} s")
+print(f"User Time (est.):   {user_time_estimate:.6f} s")
+print(f"System Time (est.): {system_time_estimate:.6f} s")
