@@ -1,0 +1,298 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace LinkedListApp
+{
+    class Node
+    {
+        public int Data { get; set; }
+        public Node Next { get; set; }
+
+        public Node(int data)
+        {
+            Data = data;
+            Next = null;
+        }
+    }
+
+    class LinkedList
+    {
+        private Node head;
+        private int size;
+
+        public LinkedList()
+        {
+            head = null;
+            size = 0;
+        }
+
+        public void Append(int elem)
+        {
+            if (head != null)
+            {
+                Node pointer = head;
+                while (pointer.Next != null)
+                {
+                    pointer = pointer.Next;
+                }
+                pointer.Next = new Node(elem);
+            }
+            else
+            {
+                head = new Node(elem);
+            }
+            size++;
+        }
+
+        public int Count
+        {
+            get { return size; }
+        }
+
+        private Node GetNode(int index)
+        {
+            if (index < 0 || index >= size)
+            {
+                throw new IndexOutOfRangeException("list index out of range");
+            }
+
+            Node pointer = head;
+            for (int i = 0; i < index; i++)
+            {
+                pointer = pointer.Next;
+            }
+            return pointer;
+        }
+
+        public int Get(int index)
+        {
+            return GetNode(index).Data;
+        }
+
+        public void Set(int index, int elem)
+        {
+            GetNode(index).Data = elem;
+        }
+
+        public int IndexOf(int elem)
+        {
+            Node pointer = head;
+            int i = 0;
+            while (pointer != null)
+            {
+                if (pointer.Data == elem)
+                {
+                    return i;
+                }
+                pointer = pointer.Next;
+                i++;
+            }
+            return -1; // Retorna -1 se não encontrar
+        }
+
+        public void Insert(int index, int elem)
+        {
+            if (index < 0 || index > size)
+            {
+                throw new IndexOutOfRangeException("list index out of range");
+            }
+
+            Node node = new Node(elem);
+            if (index == 0)
+            {
+                node.Next = head;
+                head = node;
+            }
+            else
+            {
+                Node pointer = GetNode(index - 1);
+                node.Next = pointer.Next;
+                pointer.Next = node;
+            }
+            size++;
+        }
+
+        public bool Remove(int elem)
+        {
+            if (head == null)
+            {
+                return false; // Retorna false em vez de lançar exceção
+            }
+            else if (head.Data == elem)
+            {
+                head = head.Next;
+                size--;
+                return true;
+            }
+            else
+            {
+                Node ancestor = head;
+                Node pointer = head.Next;
+                while (pointer != null)
+                {
+                    if (pointer.Data == elem)
+                    {
+                        ancestor.Next = pointer.Next;
+                        size--;
+                        return true;
+                    }
+                    ancestor = pointer;
+                    pointer = pointer.Next;
+                }
+            }
+            return false; // Elemento não encontrado
+        }
+
+        public override string ToString()
+        {
+            string r = "";
+            Node pointer = head;
+            while (pointer != null)
+            {
+                r += pointer.Data + " ";
+                pointer = pointer.Next;
+            }
+            return r.Trim();
+        }
+    }
+
+    class Program
+    {
+        static void ProcessarArquivo(string nomeArquivo)
+        {
+            LinkedList lista = new LinkedList();
+            try
+            {
+                if (!File.Exists(nomeArquivo))
+                {
+                    throw new FileNotFoundException($"Arquivo '{nomeArquivo}' não encontrado!");
+                }
+
+                var linhas = File.ReadAllLines(nomeArquivo)
+                    .Select(linha => linha.Trim())
+                    .Where(linha => !string.IsNullOrEmpty(linha))
+                    .ToList();
+
+                if (linhas.Count < 2)
+                {
+                    throw new ArgumentException("Arquivo deve ter pelo menos 2 linhas");
+                }
+
+                // Elementos iniciais
+                string[] elementosIniciais = linhas[0].Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (string elem in elementosIniciais)
+                {
+                    if (int.TryParse(elem, out int valor))
+                    {
+                        lista.Append(valor);
+                    }
+                }
+
+                Console.WriteLine($"Lista inicial: {lista}");
+
+                // Linha 2: Quantidade de ações
+                if (!int.TryParse(linhas[1], out int qtdAcoes))
+                {
+                    throw new FormatException("Segunda linha deve conter um número inteiro");
+                }
+
+                // Processa ações
+                for (int i = 2; i < 2 + qtdAcoes && i < linhas.Count; i++)
+                {
+                    string[] partes = linhas[i].Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (partes.Length < 1)
+                    {
+                        continue;
+                    }
+
+                    string acao = partes[0].ToUpper();
+
+                    if (acao == "P")
+                    {
+                        Console.WriteLine($"Lista após ação {i-1}: {lista}");
+                    }
+                    else if (acao == "A" && partes.Length >= 3)
+                    {
+                        try
+                        {
+                            if (int.TryParse(partes[1], out int valor) && int.TryParse(partes[2], out int posicao))
+                            {
+                                lista.Insert(posicao, valor);
+                                Console.WriteLine($"Adicionado {valor} na posição {posicao}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Erro na ação {i-1}: Valores inválidos");
+                            }
+                        }
+                        catch (IndexOutOfRangeException e)
+                        {
+                            Console.WriteLine($"Erro na ação {i-1}: {e.Message}");
+                        }
+                    }
+                    else if (acao == "R" && partes.Length >= 2)
+                    {
+                        if (int.TryParse(partes[1], out int valor))
+                        {
+                            if (lista.Remove(valor))
+                            {
+                                Console.WriteLine($"Removido valor {valor}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Valor {valor} não encontrado na lista");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Erro na ação {i-1}: Valor inválido");
+                        }
+                    }
+                }
+
+                Console.WriteLine($"\nLista final: {lista}");
+            }
+            catch (FileNotFoundException e)
+            {
+                Console.WriteLine($"Erro: {e.Message}");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Erro ao processar arquivo: {e.Message}");
+            }
+        }
+
+        static void Main(string[] args)
+        {
+            string nomeArquivo;
+
+            if (args.Length == 1)
+            {
+                nomeArquivo = args[0];
+            }
+            else
+            {
+                Console.Write("Digite o nome do arquivo: ");
+                nomeArquivo = Console.ReadLine();
+            }
+
+            if (string.IsNullOrEmpty(nomeArquivo))
+            {
+                Console.WriteLine("Nome do arquivo não pode ser vazio!");
+                return;
+            }
+
+            if (File.Exists(nomeArquivo))
+            {
+                ProcessarArquivo(nomeArquivo);
+            }
+            else
+            {
+                Console.WriteLine($"Arquivo '{nomeArquivo}' não encontrado!");
+            }
+
+        }
+    }
+}
