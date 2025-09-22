@@ -1,0 +1,217 @@
+import java.io.*;
+import java.util.*;
+
+class Node {
+    int data;
+    Node next;
+
+    public Node(int data) {
+        this.data = data;
+        this.next = null;
+    }
+}
+
+class LinkedList {
+    private Node head;
+    private int size;
+
+    public LinkedList() {
+        this.head = null;
+        this.size = 0;
+    }
+
+    public void append(int elem) {
+        if (head != null) {
+            Node pointer = head;
+            while (pointer.next != null) {
+                pointer = pointer.next;
+            }
+            pointer.next = new Node(elem);
+        } else {
+            head = new Node(elem);
+        }
+        size++;
+    }
+
+    public int size() {
+        return size;
+    }
+
+    private Node getNode(int index) {
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException("Index out of range: " + index);
+        }
+
+        Node pointer = head;
+        for (int i = 0; i < index; i++) {
+            pointer = pointer.next;
+        }
+        return pointer;
+    }
+
+    public int get(int index) {
+        return getNode(index).data;
+    }
+
+    public void set(int index, int elem) {
+        getNode(index).data = elem;
+    }
+
+    public int indexOf(int elem) {
+        Node pointer = head;
+        int i = 0;
+        while (pointer != null) {
+            if (pointer.data == elem) {
+                return i;
+            }
+            pointer = pointer.next;
+            i++;
+        }
+        throw new NoSuchElementException(elem + " is not in list");
+    }
+
+    public void insert(int index, int elem) {
+        if (index < 0 || index > size) {
+            throw new IndexOutOfBoundsException("Index out of range: " + index);
+        }
+
+        Node newNode = new Node(elem);
+        if (index == 0) {
+            newNode.next = head;
+            head = newNode;
+        } else {
+            Node pointer = getNode(index - 1);
+            newNode.next = pointer.next;
+            pointer.next = newNode;
+        }
+        size++;
+    }
+
+    public boolean remove(int elem) {
+        if (head == null) {
+            throw new NoSuchElementException(elem + " is not in list");
+        } else if (head.data == elem) {
+            head = head.next;
+            size--;
+            return true;
+        } else {
+            Node ancestor = head;
+            Node pointer = head.next;
+            while (pointer != null) {
+                if (pointer.data == elem) {
+                    ancestor.next = pointer.next;
+                    pointer.next = null;
+                    size--;
+                    return true;
+                }
+                ancestor = pointer;
+                pointer = pointer.next;
+            }
+        }
+        throw new NoSuchElementException(elem + " is not in list");
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder r = new StringBuilder();
+        Node pointer = head;
+        while (pointer != null) {
+            r.append(pointer.data).append(" ");
+            pointer = pointer.next;
+        }
+        return r.toString().trim();
+    }
+}
+
+class Main {
+
+    public static void processarArquivo(String nomeArquivo) {
+        LinkedList lista = new LinkedList();
+        try {
+            File arquivo = new File(nomeArquivo);
+            Scanner scanner = new Scanner(arquivo);
+            List<String> linhas = new ArrayList<>();
+
+            while (scanner.hasNextLine()) {
+                String linha = scanner.nextLine().trim();
+                if (!linha.isEmpty()) {
+                    linhas.add(linha);
+                }
+            }
+            scanner.close();
+
+            if (linhas.size() < 2) {
+                throw new IllegalArgumentException("Arquivo deve ter pelo menos 2 linhas");
+            }
+
+            // Elementos iniciais
+            String[] elementosIniciais = linhas.get(0).split("\\s+");
+            for (String elem : elementosIniciais) {
+                lista.append(Integer.parseInt(elem));
+            }
+
+            System.out.println("Lista inicial: " + lista);
+
+            // Linha 2: Quantidade de ações
+            int qtdAcoes = Integer.parseInt(linhas.get(1));
+
+            // Processa ações
+            for (int i = 2; i < 2 + qtdAcoes && i < linhas.size(); i++) {
+                String[] partes = linhas.get(i).split("\\s+");
+                if (partes.length < 1) {
+                    continue;
+                }
+
+                String acao = partes[0].toUpperCase();
+
+                if (acao.equals("P")) {
+                    System.out.println("Lista após ação " + (i-1) + ": " + lista);
+                } else if (acao.equals("A") && partes.length >= 3) {
+                    try {
+                        int valor = Integer.parseInt(partes[1]);
+                        int posicao = Integer.parseInt(partes[2]);
+                        lista.insert(posicao, valor);
+                        System.out.println("Adicionado " + valor + " na posição " + posicao);
+                    } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                        System.out.println("Erro na ação " + (i-1) + ": " + e.getMessage());
+                    }
+                } else if (acao.equals("R") && partes.length >= 2) {
+                    try {
+                        int valor = Integer.parseInt(partes[1]);
+                        lista.remove(valor);
+                        System.out.println("Removido valor " + valor);
+                    } catch (NumberFormatException | NoSuchElementException e) {
+                        System.out.println("Erro na ação " + (i-1) + ": " + e.getMessage());
+                    }
+                }
+            }
+
+            System.out.println("\nLista final: " + lista);
+
+        } catch (FileNotFoundException e) {
+            System.out.println("Erro: Arquivo '" + nomeArquivo + "' não encontrado!");
+        } catch (Exception e) {
+            System.out.println("Erro ao processar arquivo: " + e.getMessage());
+        }
+    }
+
+    public static void main(String[] args) {
+        String nomeArquivo;
+
+        if (args.length == 1) {
+            nomeArquivo = args[0];
+        } else {
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("Digite o nome do arquivo: ");
+            nomeArquivo = scanner.nextLine();
+            scanner.close();
+        }
+
+        File arquivo = new File(nomeArquivo);
+        if (arquivo.exists()) {
+            processarArquivo(nomeArquivo);
+        } else {
+            System.out.println("Arquivo '" + nomeArquivo + "' não encontrado!");
+        }
+    }
+}
